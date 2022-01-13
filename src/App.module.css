@@ -1,0 +1,14 @@
+/*
+ * Стили компонента App
+ */
+.app {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-gap: 10px;
+}
+.wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  flex-direction: column;
+}
