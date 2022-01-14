@@ -1,5 +1,5 @@
 import s from "./App.module.css";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Loader from "react-loader-spinner";
@@ -23,45 +23,42 @@ export default function App() {
   const [button, setButton] = useState(false);
   const [itemToScroll, setItemToScroll] = useState(null);
 
+  const getImage = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      await getImg(query, page).then((cardsNew) => {
+        if (cardsNew.length === 0) {
+          toast("😿 Sorry, there aren't pictures here", {
+            position: "bottom-center",
+            autoClose: 3000,
+          });
+          setButton(false);
+          setIsLoading(false);
+          return;
+        }
+        setCards((state) => {
+          console.log(state);
+          return page === 1 ? cardsNew : [...state, ...cardsNew];
+        });
+        setItemToScroll(page === 1 ? null : cardsNew[0].id);
+        setButton(true);
+        setIsLoading(false);
+      });
+    } catch (error) {
+      setError(error);
+      setButton(false);
+      setIsLoading(false);
+    }
+  }, [query, page]);
+
   useEffect(() => {
-    setPage(1);
-    setCards([]);
     setItemToScroll(null);
     setButton(false);
     setIsLoading(false);
-  }, [query]);
-
-  useEffect(() => {
-    const getImage = async () => {
-      try {
-        setIsLoading(true);
-        getImg(query, page).then((cardsNew) => {
-          if (cardsNew.length === 0) {
-            toast("😿 Sorry, there aren't pictures here", {
-              position: "bottom-center",
-              autoClose: 3000,
-            });
-            setButton(false);
-            setIsLoading(false);
-            return;
-          }
-          setCards((state) =>
-            page === 1 ? cardsNew : [...state, ...cardsNew]
-          );
-          setItemToScroll(page === 1 ? null : cardsNew[0].id);
-          setButton(true);
-          setIsLoading(false);
-        });
-      } catch (error) {
-        setError(error);
-        setButton(false);
-        setIsLoading(false);
-      }
-    };
     if (query !== "") {
       getImage();
     }
-  }, [query, page]);
+  }, [getImage, query]);
 
   useEffect(() => {
     document.getElementById(itemToScroll)?.scrollIntoView({
@@ -79,7 +76,13 @@ export default function App() {
 
   return (
     <div className={s.app}>
-      <Searchbar onSubmit={(key) => setQuery(key)} />
+      <Searchbar
+        onSubmit={(key) => {
+          setQuery(key);
+          setPage(1);
+          setCards([]);
+        }}
+      />
       {cards.length === 0 && !isLoading && !error && <HomePage />}
 
       {error && <Error />}
