@@ -1,5 +1,5 @@
 import s from "./App.module.css";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Loader from "react-loader-spinner";
@@ -21,7 +21,7 @@ export default function App() {
   const [showModal, setShowModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [button, setButton] = useState(false);
-  const [itemToScroll, setItemToScroll] = useState(null);
+  const refToScroll = useRef(null);
 
   const getImage = useCallback(async () => {
     try {
@@ -36,11 +36,11 @@ export default function App() {
         setIsLoading(false);
         return;
       }
-      setCards((state) => {
-        console.log(state);
-        return page === 1 ? cardsNew : [...state, ...cardsNew];
+      setCards((state) => [...state, ...cardsNew]);
+      refToScroll.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
       });
-      setItemToScroll(page === 1 ? null : cardsNew[0].id);
       setButton(true);
       setIsLoading(false);
     } catch (error) {
@@ -51,21 +51,14 @@ export default function App() {
   }, [query, page]);
 
   useEffect(() => {
-    setItemToScroll(null);
     setButton(false);
     setIsLoading(false);
     if (!query) {
       return;
     }
     getImage();
-  }, [getImage, query]);
+  }, [getImage, page, query]);
 
-  useEffect(() => {
-    document.getElementById(itemToScroll)?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
-  }, [cards, itemToScroll, page]);
   const handleImgClick = (cardImg, imgAlt) => {
     setCardImg(cardImg);
     setImgAlt(imgAlt);
@@ -73,16 +66,16 @@ export default function App() {
   const toggleModal = () => {
     setShowModal((state) => !state);
   };
+  const handlePageClick = () => setPage((state) => state + 1);
+  const handleSubmitForm = (key) => {
+    setQuery(key);
+    setPage(1);
+    setCards([]);
+  };
 
   return (
     <div className={s.app}>
-      <Searchbar
-        onSubmit={(key) => {
-          setQuery(key);
-          setPage(1);
-          setCards([]);
-        }}
-      />
+      <Searchbar onSubmit={handleSubmitForm} />
       {cards.length === 0 && !isLoading && !error && <HomePage />}
 
       {error && <Error />}
@@ -91,6 +84,7 @@ export default function App() {
           cards={cards}
           onClick={toggleModal}
           imgData={handleImgClick}
+          refForScroll={refToScroll}
         />
       )}
       {isLoading && (
@@ -104,9 +98,7 @@ export default function App() {
           />
         </div>
       )}
-      {button && !isLoading && (
-        <Button onClick={() => setPage((state) => state + 1)} />
-      )}
+      {button && !isLoading && <Button onClick={handlePageClick} />}
       {showModal && (
         <Modal onClose={toggleModal}>
           <img src={cardImg} alt={imgAlt} />
