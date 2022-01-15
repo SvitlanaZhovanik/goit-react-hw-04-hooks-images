@@ -26,24 +26,23 @@ export default function App() {
   const getImage = useCallback(async () => {
     try {
       setIsLoading(true);
-      await getImg(query, page).then((cardsNew) => {
-        if (cardsNew.length === 0) {
-          toast("😿 Sorry, there aren't pictures here", {
-            position: "bottom-center",
-            autoClose: 3000,
-          });
-          setButton(false);
-          setIsLoading(false);
-          return;
-        }
-        setCards((state) => {
-          console.log(state);
-          return page === 1 ? cardsNew : [...state, ...cardsNew];
+      const cardsNew = await getImg(query, page);
+      if (cardsNew.length === 0) {
+        toast("😿 Sorry, there aren't pictures here", {
+          position: "bottom-center",
+          autoClose: 3000,
         });
-        setItemToScroll(page === 1 ? null : cardsNew[0].id);
-        setButton(true);
+        setButton(false);
         setIsLoading(false);
+        return;
+      }
+      setCards((state) => {
+        console.log(state);
+        return page === 1 ? cardsNew : [...state, ...cardsNew];
       });
+      setItemToScroll(page === 1 ? null : cardsNew[0].id);
+      setButton(true);
+      setIsLoading(false);
     } catch (error) {
       setError(error);
       setButton(false);
@@ -55,9 +54,10 @@ export default function App() {
     setItemToScroll(null);
     setButton(false);
     setIsLoading(false);
-    if (query !== "") {
-      getImage();
+    if (!query) {
+      return;
     }
+    getImage();
   }, [getImage, query]);
 
   useEffect(() => {
